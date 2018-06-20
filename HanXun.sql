@@ -46,15 +46,18 @@ CREATE TABLE `t_authority` (
 -- 转存表中的数据 `t_authority`
 --
 
-INSERT INTO `t_authority` (`Fid`, `Fauth`, `Fauth_name`, `Fmemo`, `Fpid`, `Fstatus`, `Fversion`, `Fcreate_time`, `Fmodify_time`)
-VALUES
+INSERT INTO `t_authority` (`Fid`, `Fauth`, `Fauth_name`, `Fmemo`, `Fpid`, `Fstatus`, `Fversion`, `Fcreate_time`, `Fmodify_time`) VALUES
   (1, '1', '管理员权限', '全部权限', 0, 1, 0, '2017-07-08 15:05:00', '2017-07-08 15:06:04'),
-  (2, '2000', '查看商品管理模块', '', 1, 1, 0, '2017-07-08 10:25:55', '2017-07-09 14:33:15'),
-  (3, '3000', '查看仓库管理模块', '', 1, 1, 0, '2017-07-08 10:26:38', '2017-07-09 14:33:22'),
-  (4, '4000', '查看财务管理模块', '', 1, 1, 0, '2017-07-08 10:26:38', '2017-07-09 14:33:29'),
-  (5, '5000', '查看生产管理模块', '', 1, 1, 0, '2017-07-08 10:27:25', '2017-07-09 14:33:37'),
-  (6, '6000', '查看系统管理模块', '', 1, 1, 0, '2017-07-08 10:27:25', '2017-07-09 14:33:43'),
-  (8, '1000', '查看销售管理模块', '销售模块', 1, 1, 0, '2017-07-08 10:25:55', '2017-07-09 14:33:52');
+  (2, '2000', '商品管理模块', '', 1, 1, 0, '2017-07-08 10:25:55', '2017-12-09 09:50:06'),
+  (3, '3000', '仓库管理模块', '', 1, 1, 0, '2017-07-08 10:26:38', '2017-12-09 09:50:10'),
+  (4, '4000', '财务管理模块', '', 1, 1, 0, '2017-07-08 10:26:38', '2017-12-09 09:50:13'),
+  (5, '5000', '生产管理模块', '', 1, 1, 0, '2017-07-08 10:27:25', '2017-12-09 09:50:18'),
+  (6, '6000', '系统管理模块', '', 1, 1, 0, '2017-07-08 10:27:25', '2017-12-09 09:50:22'),
+  (8, '1000', '销售管理模块', '销售模块', 1, 1, 0, '2017-07-08 10:25:55', '2017-12-09 09:50:25'),
+  (9, '2001', '商品基本信息查看', '', 2, 1, 0, '2017-12-09 09:51:31', '2017-12-10 08:52:11'),
+  (10, '2002', '商品修改/删除', '', 2, 1, 0, '2017-12-10 08:51:25', '2017-12-10 08:51:52'),
+  (11, '2003', '可查看成本', '', 2, 1, 0, '2017-12-10 08:52:52', '2017-12-10 08:53:29');
+COMMIT;
 
 -- --------------------------------------------------------
 
@@ -506,3 +509,132 @@ ALTER TABLE `t_sku`
 ALTER TABLE `t_goods`
   ADD `Fpic_normal` VARCHAR(256) NOT NULL DEFAULT ''
   AFTER `Fpic`;
+
+ALTER TABLE `t_goods`
+  ADD `Fcost` VARCHAR(32) NOT NULL
+  AFTER `Fgoods_id`;
+ALTER TABLE `t_goods`
+  CHANGE `Fcost` `Fcost` DECIMAL(32) NOT NULL,
+  CHANGE `Fprice` `Fprice` DECIMAL(32) NOT NULL;
+ALTER TABLE `t_sku`
+  ADD `Fcost` DECIMAL NOT NULL
+  AFTER `Fproperty_id`;
+
+# 店铺
+CREATE TABLE `HanXun`.`t_shop` (
+  `Fid`           INT UNSIGNED                         NOT NULL AUTO_INCREMENT,
+  `Fname`         VARCHAR(64)                          NOT NULL DEFAULT '',
+  `Fowner`        VARCHAR(32)                          NULL     DEFAULT '',
+  `Fowner_mobile` VARCHAR(32)                          NULL     DEFAULT '',
+  `Fphone`        VARCHAR(32)                          NULL     DEFAULT '',
+  `Faddress`      VARCHAR(128)                         NULL     DEFAULT '',
+  `Femail`        VARCHAR(64)                          NULL     DEFAULT '',
+  `Fweb_home`     VARCHAR(64)                          NULL     DEFAULT '',
+  `Foperator`     VARCHAR(32)                          NULL     DEFAULT '',
+  `Fversion`      INT(10)                              NOT NULL DEFAULT '0',
+  `Fcreate_time`  DATETIME                             NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `Fmodify_time`  DATETIME ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`Fid`),
+  UNIQUE `key_shop_name` (`Fname`)
+)
+  ENGINE = InnoDB;
+ALTER TABLE `t_shop`
+  ADD `Fmemo` VARCHAR(256) NULL DEFAULT ''
+  AFTER `Fversion`;
+ALTER TABLE `t_shop`
+  ADD `Fstatus` BOOLEAN NOT NULL DEFAULT TRUE
+  AFTER `Fmemo`;
+
+ALTER TABLE `t_sku`
+  DROP `Fid`;
+ALTER TABLE `t_sku`
+  ADD PRIMARY KEY (`Fsku_id`);
+
+CREATE TABLE `HanXun`.`t_shop_seller` (
+  `Fid`          INT                                  NOT NULL AUTO_INCREMENT,
+  `Fseller_id`   VARCHAR(32)                          NOT NULL DEFAULT '',
+  `Fshop_id`     VARCHAR(32)                          NOT NULL DEFAULT '',
+  `Fstatus`      BOOLEAN                              NOT NULL DEFAULT TRUE,
+  `Fversion`     INT                                  NOT NULL DEFAULT '0',
+  `Fcreate_time` DATETIME                             NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `Fmodify_time` DATETIME ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`Fid`)
+)
+  ENGINE = InnoDB;
+ALTER TABLE `HanXun`.`t_shop_seller`
+  ADD UNIQUE `Frelation` (`Fseller_id`, `Fshop_id`);
+ALTER TABLE `t_shop_seller`
+  ADD `Foperatror` INT NOT NULL DEFAULT '0'
+  AFTER `Fversion`;
+ALTER TABLE `t_shop_seller`
+  CHANGE `Foperatror` `Foperator` INT(11) NOT NULL DEFAULT '0';
+
+--
+-- 表的结构 `t_shop_goods`
+--
+
+CREATE TABLE `t_shop_goods` (
+  `Fid`          INT(11)     NOT NULL,
+  `Fgoods_id`    VARCHAR(32) NOT NULL DEFAULT '',
+  `Fshop_id`     VARCHAR(32) NOT NULL DEFAULT '',
+  `Fstatus`      TINYINT(1)  NOT NULL DEFAULT '1',
+  `Fversion`     INT(11)     NOT NULL DEFAULT '0',
+  `Foperator`    INT(11)     NOT NULL DEFAULT '0',
+  `Fcreate_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `Fmodify_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)
+  ENGINE = InnoDB
+  DEFAULT CHARSET = utf8;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `t_shop_goods`
+--
+ALTER TABLE `t_shop_goods`
+  ADD PRIMARY KEY (`Fid`),
+  ADD UNIQUE KEY `Frelation` (`Fgoods_id`, `Fshop_id`);
+
+--
+-- 在导出的表使用AUTO_INCREMENT
+--
+
+--
+-- 使用表AUTO_INCREMENT `t_shop_goods`
+--
+ALTER TABLE `t_shop_goods`
+  MODIFY `Fid` INT(11) NOT NULL AUTO_INCREMENT;
+COMMIT;
+
+ALTER TABLE `HanXun`.`t_goods`
+  ADD INDEX `idx_modify_time` (`Fmodify_time`);
+ALTER TABLE `HanXun`.`t_sku`
+  ADD INDEX `goods_id` (`Fgoods_id`);
+ALTER TABLE `HanXun`.`t_sku`
+  ADD INDEX `idx_modify_time` (`Fmodify_time`);
+ALTER TABLE `HanXun`.`t_goods`
+  ADD INDEX `idx_status` (`Fstatus`);
+ALTER TABLE `HanXun`.`t_goods`
+  ADD INDEX `idx_goods_id_status` (`Fgoods_id`, `Fstatus`);
+
+ALTER TABLE `t_goods`
+  ADD `Fyear` INT(5) UNSIGNED NOT NULL DEFAULT '2017'
+  AFTER `Fcategory_id`,
+  ADD `Fmonth` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1'
+  AFTER `Fyear`,
+  ADD `Fseason` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1'
+  AFTER `Fmonth`,
+  ADD `Fsex` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1'
+  AFTER `Fseason`;
+
+ALTER TABLE `t_sku`
+  ADD `Fyear` INT(5) UNSIGNED NOT NULL DEFAULT '2017'
+  AFTER `Fcategory_id`,
+  ADD `Fmonth` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1'
+  AFTER `Fyear`,
+  ADD `Fseason` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1'
+  AFTER `Fmonth`,
+  ADD `Fsex` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1'
+  AFTER `Fseason`;

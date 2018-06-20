@@ -20,14 +20,18 @@ class Color_model extends HX_Model
 
     public function color_delete_by_id($id)
     {
-        return $this->db->update($this->table, ['Fstatus' => 0], ['Fid' => $id]);
+        log_in('color_delete_by_id'.$id);
+        $ret = $this->db->update($this->table, ['Fstatus' => "0"], ['Fid' => $id]);
+        log_out($this->db->last_query());
+        $this->color_cache_delete();
+        return $ret;
     }
 
     public function get_color_list_all()
     {
         $s = "SELECT Fid,Fname,Fcolor_num,Fcolor_code FROM {$this->table} WHERE Fstatus = 1";
         $ret = $this->db->query($s);
-
+        log_out($this->db->last_query());
         return $this->suc_out_put($ret->result('array'));
     }
 
@@ -61,7 +65,33 @@ class Color_model extends HX_Model
         if (!$ret->row(0)) {
             return $this->suc_out_put();
         }
-        return $this->fail_out_put(1000, "颜色代码已存在");
+        return $this->fail_out_put(1000, "颜色代码:'{$request['color_num']}'已存在");
+    }
+
+    public function check_color_name_available($request)
+    {
+        $s = "SELECT * FROM {$this->table} WHERE Fstatus = 1  AND Fname = ?;";
+
+        $ret = $this->db->query($s, [
+            $request['name']
+        ]);
+        if (!$ret->row(0)) {
+            return $this->suc_out_put();
+        }
+        return $this->fail_out_put(1000, "颜色名称:'{$request['name']}'已存在");
+    }
+
+    public function check_color_code_available($request)
+    {
+        $s = "SELECT * FROM {$this->table} WHERE Fstatus = 1  AND Fcolor_code = ?;";
+
+        $ret = $this->db->query($s, [
+            $request['color_code']
+        ]);
+        if (!$ret->row(0)) {
+            return $this->suc_out_put();
+        }
+        return $this->fail_out_put(1000, "颜色:'#{$request['color_code']}'已存在");
     }
 
     private function insert_color_check($request)
@@ -81,6 +111,16 @@ class Color_model extends HX_Model
         if ($ret['result'] != 0) {
             $msg = $ret['res_info'];
         }
+
+        $ret = $this->check_color_name_available($request);
+        if ($ret['result'] != 0) {
+            $msg = $ret['res_info'];
+        }
+
+        $ret = $this->check_color_code_available($request);
+        if ($ret['result'] != 0) {
+            $msg = $ret['res_info'];
+        }
         if ($msg)
             show_error($msg);
     }
@@ -96,6 +136,58 @@ class Color_model extends HX_Model
             'Fmemo' => $request['memo'],
         ];
         $this->db->insert($this->table, $insert_arr);
+        $this->color_cache_delete();
+    }
+
+    public function color_cache_delete()
+    {
+        error_reporting(0);
+        try {
+            $color_cache = 'COLOR_CACHE';
+            $this->load->driver('cache');
+            if ($this->cache->redis->get($color_cache) != null) { //如果未设置
+                $this->cache->redis->delete($color_cache);
+            }
+        } catch (Exception $e) {
+            log_error($e->getMessage());
+        }
+    }
+
+    public function color_cache()
+    {
+        $arr = [];
+        if ($this->config->item('redis_default')['cache_on']) {
+            $color_cache = 'COLOR_CACHE';
+            try {
+                $this->load->driver('cache');
+                if (empty($this->cache->redis->get($color_cache))) { //如果未设置
+
+                    $arr = $this->colorList();
+
+                    $this->cache->redis->save($color_cache, $arr, 86400); //设置
+                } else {
+                    $arr = $this->cache->redis->get($color_cache);  //从缓存中直接读取对应的值
+                }
+
+            } catch (Exception $e) {
+                log_error($e->getMessage());
+            }
+        }
+        if (empty($arr)) {
+            $arr = $this->colorList();
+        }
+
+        return $arr;
+    }
+
+    private function colorList()
+    {
+        $arr = $this->get_color_list_all();
+        $result = [];
+        foreach ($arr['result_rows'] as $r) {
+            $result[$r['id']] = $r;
+        }
+        return $result;
     }
 
 }

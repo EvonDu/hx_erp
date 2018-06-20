@@ -20,8 +20,9 @@ $this->load->view('head');
         <div class="am-form-group">
             <label for="doc-select-1">父类</label>
             <select id="doc-select-1" name="pid">
-                <?php foreach ($category_list as $category): ?>
-                    <option value="<?= $category['id'] ?>"><?= $category['category_name'] ?></option>
+                <option value="0">无</option>
+                <?php foreach ($category_list as $k => $category): ?>
+                    <option value="<?= $category['id'] ?>"><?= $category['type'] ?></option>
                 <?php endforeach; ?>
             </select>
             <span class="am-form-caret"></span>
